@@ -1,14 +1,13 @@
 import { OlxPageScraper } from "@/OlxPageScraper";
-import { OlxAd } from "@/OlxAd";
 import { ApiService } from "@/ApiService";
 import { WebSocketService } from "@/WebSocketService";
-import { OlxAdCategory } from "@/types/olx.types";
+import { OlxAdCategory, OlxPlpAd } from "@/types/olx.types";
 import { configDotenv } from "dotenv";
 
 configDotenv();
 
 const run = async () => {
-  const collectedAds: OlxAd[] = [];
+  const collectedAds: OlxPlpAd[] = [];
   const scraper = new OlxPageScraper();
   const api = ApiService.getInstance();
   const categoryWs = new WebSocketService("olx/ads/categories");
@@ -25,19 +24,29 @@ const run = async () => {
   setInterval(async () => {
     for (const category of getCategoryNames()) {
       try {
-        await scraper.scrapPlp(category);
-        const ad = scraper.ads?.[0];
-        if (!ad) continue;
+        // Scrap all plp ads and take first one (newest)
+        const plpAds = await scraper.scrapPlp(category);
+        const plpAd = plpAds?.[0];
+        if (!plpAd) continue;
 
+        // Check if ad has been already scraped
         const isNew = !collectedAds.some(
-          (collected) => collected.olxId === ad.olxId
+          (collected) => collected.olxId === plpAd.olxId
         );
-        if (!isNew) return;
+        if (!isNew) continue;
+
+        // Scrap pdp of that ad
+        const pdpAd = await scraper.scrapPdp(plpAd.url);
+        if (!pdpAd) continue;
+
+        // Build olx ad create input and send post request
+        const ad = { ...plpAd, ...pdpAd };
 
         console.log(ad);
         collectedAds.push(ad);
         await api.post("olx/ads", ad);
 
+        // Clean collected ads
         if (collectedAds.length > 1000) {
           collectedAds.slice(900);
         }
@@ -45,7 +54,7 @@ const run = async () => {
         console.error(error?.message);
       }
     }
-  }, 500);
+  }, 1000);
 };
 
 run();

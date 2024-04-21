@@ -1,10 +1,9 @@
 import axios from "axios";
 import { JSDOM } from "jsdom";
-import { OlxAd } from "@/OlxAd";
-import { OlxAdBuilder } from "@/OlxAdBuilder";
+import { OlxPlpAdBuilder } from "@/OlxPlpAdBuilder";
+import { OlxPdpAdBuilder } from "@/OlxPdpAdBuilder";
 
 export class OlxPageScraper {
-  private _ads?: OlxAd[];
   private baseUrl = "https://www.olx.pl/";
   private query = "/?search%5Border%5D=created_at:desc";
 
@@ -16,23 +15,28 @@ export class OlxPageScraper {
     ];
 
     const ads = [];
-    const builder = new OlxAdBuilder();
+    const builder = new OlxPlpAdBuilder();
 
     for (const card of cards) {
       const featured = card.querySelector("[data-testid='adCard-featured']");
       if (featured) continue;
 
-      await builder.build(card, url);
+      builder.build(card, url);
       if (!builder.ad) continue;
 
       ads.push(builder.ad);
     }
 
-    this._ads = ads;
-    return this;
+    return ads;
   }
 
-  get ads() {
-    return this._ads;
+  async scrapPdp(url: string) {
+    const response = await axios.get(url);
+    const dom = new JSDOM(response.data);
+
+    const builder = new OlxPdpAdBuilder();
+    builder.build(dom);
+
+    return builder.ad;
   }
 }

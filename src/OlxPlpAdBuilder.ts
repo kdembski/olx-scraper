@@ -1,10 +1,10 @@
-import { OlxAd } from "@/OlxAd";
+import { OlxPlpAd } from "@/types/olx.types";
 
-export class OlxAdBuilder {
-  private _ad?: OlxAd;
+export class OlxPlpAdBuilder {
+  private _ad?: OlxPlpAd;
   private baseUrl = "https://www.olx.pl";
 
-  async build(card: Element, categoryName: string) {
+  build(card: Element, categoryName: string) {
     const name = card.querySelector("h6")?.textContent;
     const olxId = card.getAttribute("id");
     const url = card.querySelector("a")?.href;
@@ -18,13 +18,13 @@ export class OlxAdBuilder {
 
     if (!name || !olxId || !url || !price) return this;
 
-    this._ad = new OlxAd({
+    this._ad = {
       olxId,
       name,
       price,
       url: this.baseUrl + url,
       categoryName,
-    });
+    };
 
     return this;
   }
