@@ -21,8 +21,8 @@ const run = async () => {
 
   const getCategoryNames = () => categories.map((category) => category.name);
 
-  for (const category of getCategoryNames()) {
-    setInterval(async () => {
+  setInterval(() => {
+    getCategoryNames().forEach(async (category) => {
       try {
         // Clean collected ads
         if (collectedIds.length > 1000) {
@@ -54,8 +54,8 @@ const run = async () => {
       } catch (error: any) {
         console.error(error?.message);
       }
-    }, 5000);
-  }
+    });
+  }, 1000);
 };
 
 run();
