@@ -54,7 +54,7 @@ const run = async () => {
       } catch (error: any) {
         console.error(error?.message);
       }
-    }, 1000);
+    }, 5000);
   }
 };
 
